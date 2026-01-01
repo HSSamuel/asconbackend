@@ -8,16 +8,27 @@ const UserSchema = new mongoose.Schema({
   yearOfAttendance: { type: Number, required: true },
   programmeTitle: {
     type: String,
-    required: true,
+    required: false,
     enum: [
       "Management Programme",
       "Computer Programme",
       "Financial Management",
       "Leadership Development Programme",
+      "Public Administration and Management",
+      "Public Administration and Policy (Advanced)",
+      "Public Sector Management Course",
+      "Performance Improvement Course",
+      "Creativity and Innovation Course",
+      "Mandatory & Executive Programmes",
     ],
   },
   isVerified: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
+  certificateNumber: {
+    type: String,
+    required: true,
+  },
 
   // --- 🆕 NEW PRO FIELDS ---
   profilePicture: { type: String, default: "" }, // URL to the image
