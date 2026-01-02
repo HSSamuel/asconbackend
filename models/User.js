@@ -6,6 +6,8 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   yearOfAttendance: { type: Number, required: true },
+
+  // ✅ PROGRAMME DROPDOWN
   programmeTitle: {
     type: String,
     required: false,
@@ -20,8 +22,14 @@ const UserSchema = new mongoose.Schema({
       "Performance Improvement Course",
       "Creativity and Innovation Course",
       "Mandatory & Executive Programmes",
+      "Postgraduate Diploma in Public Administration and Management",
+      "Other", // Allows selection of "Other"
     ],
   },
+
+  // ✅ NEW FIELD: Stores the manual input when "Other" is selected
+  customProgramme: { type: String, default: "" },
+
   isVerified: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
@@ -31,10 +39,10 @@ const UserSchema = new mongoose.Schema({
   },
 
   // --- 🆕 NEW PRO FIELDS ---
-  profilePicture: { type: String, default: "" }, // URL to the image
+  profilePicture: { type: String, default: "" },
   bio: { type: String, default: "" },
   jobTitle: { type: String, default: "" },
-  organization: { type: String, default: "" }, // ✅ CHANGED from 'company'
+  organization: { type: String, default: "" },
   linkedin: { type: String, default: "" },
   phoneNumber: { type: String, default: "" },
 });
