@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema({
   // Admin & Security Fields
   isAdmin: { type: Boolean, default: false },
 
-  // ✅ Default is TRUE so they no longer stay "Pending" until you verify them
+  // ✅ UPDATED: Default is TRUE so they can login immediately
   isVerified: { type: Boolean, default: true },
 
   canEdit: { type: Boolean, default: false },
