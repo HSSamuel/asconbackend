@@ -47,7 +47,7 @@ router.post("/register", async (req, res) => {
     });
 
     const savedUser = await newUser.save();
-    
+
     // Create Token immediately so they don't have to login manually
     const token = jwt.sign(
       { _id: savedUser._id, isAdmin: false, canEdit: false },
@@ -55,15 +55,15 @@ router.post("/register", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.status(201).json({ 
-      message: "Registration successful!", 
+    res.status(201).json({
+      message: "Registration successful!",
       token: token,
       user: {
         id: savedUser._id,
         fullName: savedUser.fullName,
         email: savedUser.email,
-        hasSeenWelcome: false // Explicitly send this
-      }
+        hasSeenWelcome: false, // Explicitly send this
+      },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -111,9 +111,9 @@ router.post("/login", async (req, res) => {
         isAdmin: user.isAdmin,
         canEdit: user.canEdit,
         profilePicture: user.profilePicture,
-        
+
         // ✅ CRITICAL FIX: Explicitly send this field
-        hasSeenWelcome: user.hasSeenWelcome || false, 
+        hasSeenWelcome: user.hasSeenWelcome || false,
       },
     });
   } catch (err) {
@@ -160,9 +160,9 @@ router.post("/google", async (req, res) => {
           isAdmin: user.isAdmin,
           canEdit: user.canEdit,
           profilePicture: user.profilePicture,
-          
+
           // ✅ CRITICAL FIX
-          hasSeenWelcome: user.hasSeenWelcome || false, 
+          hasSeenWelcome: user.hasSeenWelcome || false,
         },
       });
     } else {
