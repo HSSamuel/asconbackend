@@ -21,6 +21,7 @@ router.post("/register", async (req, res) => {
       phoneNumber,
       yearOfAttendance,
       programmeTitle, // This comes from your dropdown
+      customProgramme, // ✅ Ensure custom programme is handled if sent
     } = req.body;
 
     // Check if email exists
@@ -40,13 +41,30 @@ router.post("/register", async (req, res) => {
       phoneNumber,
       yearOfAttendance,
       programmeTitle,
+      customProgramme: customProgramme || "", // Handle custom input
       isVerified: true, // No Longer Pending Admin Approval
+      hasSeenWelcome: false, // Default for new users
     });
 
     const savedUser = await newUser.save();
-    res
-      .status(201)
-      .json({ message: "Registration successful!", userId: savedUser._id });
+    
+    // Create Token immediately so they don't have to login manually
+    const token = jwt.sign(
+      { _id: savedUser._id, isAdmin: false, canEdit: false },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(201).json({ 
+      message: "Registration successful!", 
+      token: token,
+      user: {
+        id: savedUser._id,
+        fullName: savedUser.fullName,
+        email: savedUser.email,
+        hasSeenWelcome: false // Explicitly send this
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -57,35 +75,45 @@ router.post("/register", async (req, res) => {
 // ---------------------------------------------------------
 router.post("/login", async (req, res) => {
   try {
-    // 1. Check if user exists
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(400).json({ message: "Email not found" });
+    const { email, password } = req.body;
 
-    // 2. Check Password
-    const validPass = await bcrypt.compare(req.body.password, user.password);
+    const user = await User.findOne({ email: email });
+    if (!user) return res.status(400).json({ message: "Email is not found." });
+
+    const validPass = await bcrypt.compare(password, user.password);
     if (!validPass)
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid Password." });
 
-    // 3. Create Token
+    if (user.isVerified === false) {
+      return res
+        .status(403)
+        .json({ message: "Account pending approval. Please contact Admin." });
+    }
+
+    // Add permissions to token
     const token = jwt.sign(
-      { _id: user._id },
-      process.env.TOKEN_SECRET || "fallbackSecret"
+      {
+        _id: user._id,
+        isAdmin: user.isAdmin || false,
+        canEdit: user.canEdit || false,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
     );
 
-    // ✅ THE FIX: Explicitly send 'hasSeenWelcome' or the whole object
+    // ✅ UPDATE: Send 'hasSeenWelcome' to frontend
     res.header("auth-token", token).json({
-      token,
+      token: token,
       user: {
-        _id: user._id,
+        id: user._id,
         fullName: user.fullName,
         email: user.email,
         isAdmin: user.isAdmin,
+        canEdit: user.canEdit,
         profilePicture: user.profilePicture,
-        jobTitle: user.jobTitle,
-        organization: user.organization,
-
-        // ✅ CRITICAL: You must include this!
-        hasSeenWelcome: user.hasSeenWelcome,
+        
+        // ✅ CRITICAL FIX: Explicitly send this field
+        hasSeenWelcome: user.hasSeenWelcome || false, 
       },
     });
   } catch (err) {
@@ -111,7 +139,6 @@ router.post("/google", async (req, res) => {
       if (!user.isVerified)
         return res.status(403).json({ message: "Account pending approval." });
 
-      // ✅ UPDATE: Add 'canEdit' to the token
       const authToken = jwt.sign(
         {
           _id: user._id,
@@ -122,6 +149,7 @@ router.post("/google", async (req, res) => {
         { expiresIn: "1h" }
       );
 
+      // ✅ UPDATE: Send 'hasSeenWelcome' here too
       return res.json({
         message: "Login Success",
         token: authToken,
@@ -130,7 +158,11 @@ router.post("/google", async (req, res) => {
           fullName: user.fullName,
           email: user.email,
           isAdmin: user.isAdmin,
-          canEdit: user.canEdit, // ✅ Send permission flag
+          canEdit: user.canEdit,
+          profilePicture: user.profilePicture,
+          
+          // ✅ CRITICAL FIX
+          hasSeenWelcome: user.hasSeenWelcome || false, 
         },
       });
     } else {
@@ -161,7 +193,7 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // 3. Create the Reset Link (Using your Netlify Frontend)
+    // 3. Create the Reset Link
     const resetUrl = `https://asconadmin.netlify.app/reset-password?token=${token}`;
 
     const transporter = nodemailer.createTransport({
