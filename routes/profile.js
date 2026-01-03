@@ -74,4 +74,15 @@ router.get("/me", verifyToken, async (req, res) => {
   }
 });
 
+// @route   PUT /api/profile/welcome-seen
+// @desc    Mark the user as having seen the welcome dialog
+router.put("/welcome-seen", verifyToken, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user._id, { hasSeenWelcome: true });
+    res.status(200).json({ message: "Welcome status updated" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
