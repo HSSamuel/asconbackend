@@ -57,41 +57,35 @@ router.post("/register", async (req, res) => {
 // ---------------------------------------------------------
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    // 1. Check if user exists
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(400).json({ message: "Email not found" });
 
-    const user = await User.findOne({ email: email });
-    if (!user) return res.status(400).json({ message: "Email is not found." });
-
-    const validPass = await bcrypt.compare(password, user.password);
+    // 2. Check Password
+    const validPass = await bcrypt.compare(req.body.password, user.password);
     if (!validPass)
-      return res.status(400).json({ message: "Invalid Password." });
+      return res.status(400).json({ message: "Invalid password" });
 
-    if (user.isVerified === false) {
-      return res
-        .status(403)
-        .json({ message: "Account pending approval. Please contact Admin." });
-    }
-
-    // ✅ UPDATE: Add 'canEdit' to the token payload
+    // 3. Create Token
     const token = jwt.sign(
-      {
-        _id: user._id,
-        isAdmin: user.isAdmin || false,
-        canEdit: user.canEdit || false, // Include Edit Permission
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { _id: user._id },
+      process.env.TOKEN_SECRET || "fallbackSecret"
     );
 
-    // ✅ UPDATE: Send 'canEdit' to frontend
+    // ✅ THE FIX: Explicitly send 'hasSeenWelcome' or the whole object
     res.header("auth-token", token).json({
-      token: token,
+      token,
       user: {
-        id: user._id,
+        _id: user._id,
         fullName: user.fullName,
         email: user.email,
         isAdmin: user.isAdmin,
-        canEdit: user.canEdit, // Send permission flag
+        profilePicture: user.profilePicture,
+        jobTitle: user.jobTitle,
+        organization: user.organization,
+
+        // ✅ CRITICAL: You must include this!
+        hasSeenWelcome: user.hasSeenWelcome,
       },
     });
   } catch (err) {
