@@ -215,4 +215,22 @@ router.delete("/programmes/:id", verifyEditor, async (req, res) => {
   }
 });
 
+// UPDATE PROGRAMME (Write Action: Needs verifyEditor)
+router.put("/programmes/:id", verifyEditor, async (req, res) => {
+  try {
+    const { title, code, description } = req.body;
+    
+    // Find the programme by ID and update it
+    const updatedProg = await Programme.findByIdAndUpdate(
+      req.params.id,
+      { title, code, description },
+      { new: true } // This ensures we get back the *new* updated version
+    );
+
+    res.json({ message: "Programme updated!", programme: updatedProg });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

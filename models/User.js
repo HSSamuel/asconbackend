@@ -27,24 +27,31 @@ const userSchema = new mongoose.Schema({
   // ✅ UPDATED: Stores the selected course from the Dropdown
   programmeTitle: {
     type: String,
-    required: true,
+    required: false, // Changed to false to prevent update crashes
+  },
+
+  // ✅ NEW FIELD: For "Other" option in dropdown
+  customProgramme: {
+    type: String,
+    default: "",
   },
 
   yearOfAttendance: {
     type: Number,
-    required: true,
+    required: false, // ✅ CRITICAL FIX: Must be false to handle empty updates safely
   },
 
   // Professional Details
   jobTitle: { type: String, default: "" },
   organization: { type: String, default: "" },
 
+  // ✅ NEW MISSING FIELDS (Required for Profile Update)
+  bio: { type: String, default: "" },
+  linkedin: { type: String, default: "" },
+
   // Admin & Security Fields
   isAdmin: { type: Boolean, default: false },
-
-  // ✅ UPDATED: Default is TRUE so they can login immediately
   isVerified: { type: Boolean, default: true },
-
   canEdit: { type: Boolean, default: false },
 
   // Profile Picture
